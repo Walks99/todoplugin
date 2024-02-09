@@ -1,40 +1,74 @@
-/*
- *
- * HomePage
- *
- */
-import { Layout, BaseHeaderLayout, ContentLayout } from "@strapi/design-system";
-import React, { memo, useState } from "react";
+// React imports
+import React, { memo, useEffect, useState } from "react";
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Dependency imports
 import { nanoid } from "nanoid";
-
-import TodoModal from "../../components/ToDoModal/index.js";
-
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Strapi design system
+import { Layout, BaseHeaderLayout, ContentLayout } from "@strapi/design-system";
 import { EmptyStateLayout } from "@strapi/design-system";
 import { Button } from "@strapi/design-system";
 import { Plus } from "@strapi/icons";
+import { LoadingIndicatorPage } from "@strapi/helper-plugin";
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// API Imports
+import todoRequests from "../../api/todo.js";
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Component Imports
 import { Illo } from "../../components/Illo/index.js";
 import TodoCount from "../../components/ToDoCount/index.js";
 import TodoTable from "../../components/ToDoTable/index.js";
+import todo from "../../../../server/controllers/todo.js";
+import TodoModal from "../../components/ToDoModal/index.js";
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 const HomePage = () => {
   const [todoData, setTodoData] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    if (isLoading === false) setIsLoading(true);
+
+    try {
+      const todo = await todoRequests.getAllTodos();
+      setTodoData(todo.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const initFetchData = async () => {
+      await fetchData();
+    };
+
+    initFetchData();
+  }, []);
+
 
   async function addTodo(data) {
-    setTodoData([...todoData, { ...data, id: nanoid(), isDone: false }]);
+    await todoRequests.addTodo(data);
+    await fetchData();
   }
 
   async function toggleTodo(data) {
-    alert("Add Toggle Todo in API");
+    await todoRequests.toggleTodo(data.id);
   }
 
   async function deleteTodo(data) {
-    alert("Add Delete Todo in API");
+    await todoRequests.deleteTodo(data.id);
+    await fetchData();
   }
 
   async function editTodo(id, data) {
-    alert("Add Edit Todo in API");
+    await todoRequests.editTodo(id, data);
+    await fetchData();
   }
+
+  if (isLoading) return <LoadingIndicatorPage />;
 
   return (
     <Layout sideNav={null}>
@@ -84,3 +118,5 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+// ^^^^^^^^^^^^^^^^^ My original code above ^^^^^^^^^^^^^^^
