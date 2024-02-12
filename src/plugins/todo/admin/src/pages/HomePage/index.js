@@ -1,18 +1,17 @@
 // React imports
 import React, { memo, useEffect, useState } from "react";
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-// Dependency imports
-import { nanoid } from "nanoid";
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 // Strapi design system
 import { Layout, BaseHeaderLayout, ContentLayout } from "@strapi/design-system";
 import { EmptyStateLayout } from "@strapi/design-system";
 import { Button } from "@strapi/design-system";
 import { Plus } from "@strapi/icons";
-import { LoadingIndicatorPage } from "@strapi/helper-plugin";
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-// API Imports
-import todoRequests from "../../api/todo.js";
+// Strapi Pluggin imports
+import { LoadingIndicatorPage, useFetchClient } from "@strapi/helper-plugin";
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// import todoRequests from "../../api/todo.js";
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 // Component Imports
 import { Illo } from "../../components/Illo/index.js";
@@ -26,45 +25,46 @@ const HomePage = () => {
   const [todoData, setTodoData] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { get, put, del, post } = useFetchClient();
 
   const fetchData = async () => {
     if (isLoading === false) setIsLoading(true);
 
     try {
-      const todo = await todoRequests.getAllTodos();
-      setTodoData(todo.data);
+      const {data} = await get("/todo/find");
+      setTodoData(data);
+      setIsLoading(false);
     } catch (error) {
       console.log(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const initFetchData = async () => {
-      await fetchData();
-    };
-
-    initFetchData();
+    fetchData();
   }, []);
 
 
   async function addTodo(data) {
-    await todoRequests.addTodo(data);
-    await fetchData();
+    await post("/todo/create", {
+      data: data,
+    });
+    fetchData();
   }
 
-  async function toggleTodo(data) {
-    await todoRequests.toggleTodo(data.id);
+  async function toggleTodo(id) {
+    await put(`/todo/toggle/${id}`);
+    fetchData();
   }
 
-  async function deleteTodo(data) {
-    await todoRequests.deleteTodo(data.id);
+  async function deleteTodo(id) {
+    await del(`/todo/delete/${id}`);
     await fetchData();
   }
 
   async function editTodo(id, data) {
-    await todoRequests.editTodo(id, data);
+    await put(`/todo/update/${id}`, {
+      data: data,
+    });
     await fetchData();
   }
 
@@ -110,7 +110,7 @@ const HomePage = () => {
       {showModal && (
         <TodoModal
           setShowModal={setShowModal}
-          addTodo={(todo) => setTodoData([...todoData, todo])}
+          addTodo={addTodo}
         />
       )}
     </Layout>
