@@ -1,9 +1,8 @@
 
 
 /**
- *
  * PluginIcon
- *
+ * This component is used to display the plugin icon in the plugin list.
  */
 
 import React from 'react';
